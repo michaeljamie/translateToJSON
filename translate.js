@@ -15,6 +15,13 @@ const translateAll = async (jsonString, selector, selectedLangs) => {
     {name: 'Swedish', code: 'sv'},
     {name: 'Norwegian', code: 'no'},
     {name: 'Estonian', code: 'et'},
+    {name: 'Italian', code: 'it'},
+    {name: 'Lithuanian', code: 'lt'},
+    {name: 'Arabic', code: 'ar', loto: true},
+    {name: 'Hebrew', code: 'iw', loto: true},
+    {name: 'Italian', code: 'it', loto: true},
+    {name: 'Korean', code: 'ko', loto: true},
+    {name: 'Chinese', code: 'zh-CN', loto: true},
   ]
   let requestText = (Object.values(JSON.parse(jsonString)).map(item => encodeURIComponent(item)).join('%0A').replace(/ /g,'%20'))
   const page = await browser.newPage()
@@ -22,13 +29,29 @@ const translateAll = async (jsonString, selector, selectedLangs) => {
   for (let i in selectedLangs) {
     console.log('[Server] Currently reading: ' + selectedLangs[i])
     await page.goto(`https://translate.google.com/?sl=en&tl=${selectedLangs[i]}&text=${requestText}&op=translate`, {waitUntil: 'networkidle2'});
+    
+    // check to see if there is a cookie page
+    await delay(1500); // delay needed to wait for element
+    await page.evaluate(() => {
+      const selectorString = 'button[aria-label="Reject all"]'
+      let el = document.querySelector(selectorString)
+      if (el) el.click()
+      return el
+    })
+    
     await page.waitForSelector(selector)
     let data = await page.evaluate((selector) => {
       return document.querySelector(selector).innerText.split('\n')
     }, selector)
     let currentOutput = {}
     Object.keys(JSON.parse(jsonString)).forEach((key, i) => { currentOutput[key] = data[i] })
-    response.push({langCode: selectedLangs[i], langName: langNames[langNames.findIndex(el => el.code === selectedLangs[i])].name, translations: currentOutput})
+    let currentLangObj = langNames[langNames.findIndex(el => el.code === selectedLangs[i])]
+    response.push({
+      langCode: selectedLangs[i], 
+      langName: currentLangObj.name, 
+      loto: currentLangObj.loto,
+      translations: currentOutput
+    })
     await delay(1200)
   }
   await browser.close()

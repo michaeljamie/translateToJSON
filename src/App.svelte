@@ -5,6 +5,7 @@
 	let isLoading = false
 	let response = []
 	let availableLanguages = []
+	let lotoLangages = []
 	let selectedLanguages = []
 	let userJSON = ''
 	let customSelector = ''
@@ -46,8 +47,9 @@
 		fetch('./languages', { method: 'GET' })
 		.then(response => response.json())
 		.then(data => {
-			availableLanguages = data
-			selectedLanguages = data.map(item => ({code: item.code, checked: true}))
+			availableLanguages = data.filter(lang => !lang.loto)
+			lotoLangages = data.filter(lang => lang.loto)
+			selectedLanguages = data.map(item => ({code: item.code, checked: !item.loto}))
 		})
 		.catch((e) => {
 			console.log(e)
@@ -76,7 +78,7 @@
 				<label for="jsonInput">Input English JSON here:</label>
 				<textarea bind:value={userJSON} name="jsonInput" placeholder="Insert JSON here"></textarea>
 				<label for="customSelector">Custom selector name</label>
-				<input bind:value={customSelector} class="customSelector" name="customSelector" placeholder="Default is .VIiyi" />
+				<input bind:value={customSelector} class="customSelector" name="customSelector" placeholder="Default is .lRu31" />
 				
 				<div class="labelTitle">Select languages:</div>
 				<div class="langSelectArea">
@@ -89,8 +91,19 @@
 						{/each}
 					{/if}
 				</div>
+				{#if lotoLangages.length > 0}
+					<div class="labelTitle">Loto languages:</div>
+					<div class="langSelectArea">
+						{#each lotoLangages as lang, index}
+							<input type="checkbox" id={`cb${index + availableLanguages.length}`} bind:checked={selectedLanguages[index + availableLanguages.length].checked} class="langSelectBtn" />
+							<label for={`cb${index + availableLanguages.length}`} class="langSelectLabel">{lang.code}</label>
+						{/each}
+					</div>
+				{/if}
 				{#if availableLanguages.length > 0}
-					<div class="estimatedTime">Estimated loading time: {selectedLanguages.filter(lang => lang.checked).length * 3} seconds</div>
+					<div class="estimatedTime">
+						Estimated loading time: {(selectedLanguages.filter(lang => lang.checked).length * 5) + 12} seconds
+					</div>
 				{/if}
 			</div>
 			
@@ -176,7 +189,8 @@
 	/* lang select buttons */
 	.langSelectArea {
 		display: flex;
-		padding: 5px 0 10px 0;
+		padding: 5px 0;
+		flex-wrap: wrap;
 	}
 	.langSelectBtn {
 		display: none;
@@ -188,6 +202,7 @@
 		cursor: pointer;
 		border-radius: 5px;
 		margin-right: 5px;
+		margin-bottom: 5px;
 		text-transform: uppercase;
 		user-select: none;
 	}
@@ -246,8 +261,9 @@
 	}
 	.langCode {
 		background-color: orange;
-		width: 20px;
+		min-width: 20px;
 		height: 20px;
+		padding: 0 3px;
 		font-weight: bold;
 		font-size: 12px;
 		text-transform: uppercase;
